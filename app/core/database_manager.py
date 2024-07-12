@@ -2,6 +2,7 @@
 
 ## lib
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 
 ## module
 
@@ -19,15 +20,21 @@ class DatabaseManager:
             url=cls.url,
             pool_size = 10
         )
-
-        print("DB statup done")
+        cls.async_session = sessionmaker(
+            cls.async_engine,
+            expire_on_commit=False,
+            class_=AsyncSession
+        )
+        print("DB statup done!")
 
     
     @classmethod
-    def get_ss(cls):
+    async def get_ss(cls):
         try:
-            yield cls.async_session
+            ss = cls.async_session()
+            yield ss
         except Exception as e:
             print("error : ",e)
+            await ss.rollback()
         finally:
-            
+            await ss.close()
