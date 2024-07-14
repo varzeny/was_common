@@ -7,6 +7,7 @@ from fastapi import FastAPI
 
 ## module
 from app.core.util_manager import read_file_for_json
+from app.core.authorization_manager import AuthorizationManager
 from app.core.database_manager import DatabaseManager
 from app.controller import router as r1
 
@@ -19,8 +20,11 @@ async def startup():
     #### read config
     app.state.config = read_file_for_json( os.path.join( os.path.dirname(__file__), "config.json" ) )
 
-    #### DB setup
-    DatabaseManager.activate( app.state.config["database"] )
+    #### Authorization Manager setup
+    AuthorizationManager.activate( app.state.config["authorization_manager"] )
+
+    #### DataBase Manager setup
+    DatabaseManager.activate( app.state.config["database_manager"] )
     
     #### endpoint router
     app.include_router( r1 )

@@ -12,6 +12,7 @@ from app.core.database_manager import DatabaseManager as DB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from app.schema.endpoint_schema import LoginSchema, SignSchema
+from app.core.authorization_manager import AuthorizationManager as AUTH
 
 ## definition
 router = APIRouter()
@@ -21,40 +22,38 @@ template = Jinja2Templates(directory="app/template")
 
 
 ### test
-@router.get("/test")
-
-
-
-### sign up
-
-@router.post("/sign")
-async def post_sign( ss:AsyncSession=Depends( DB.get_ss ) ):
-    name="kim"
-    password="123"
-    query = """
-    INSERT INTO account(name, password)
-    VALUES(:name, :password) AS vals
-    ON DUPLICATE KEY UPDATE name=vals.name, password=vals.password
-    """
-    await ss.execute(
-        statement=text( query ),
-        params={"name":name, "password":password}
-    )
-    await ss.commit()
+# @router.get("/test")
 
 
 
 
 ### widget
 @router.get("/widget-account")
-async def get_accountbar(req:Request):
-    return template.TemplateResponse( "widget_account.html", {"request":req} )
+async def get_accountbar(req:Request, token:str=Depends(AUTH.check_token)):
+    referer = req.headers.get("referer")
+
+    if token:
+        print("yes")
+        print(token)
+    else:
+        print("no")
+    return template.TemplateResponse(
+        name="widget_account.html",
+        status_code=200,
+        context={
+            "request":req,
+            "referer":referer,
+            "token":token
+        }
+    )
 
 
 ### page
 @router.get("/page-login")
 async def get_page_login(req:Request):
-    return template.TemplateResponse( "page_login.html", {"request":req} )
+    referer = req.query_params.get("referer")
+    print(referer)
+    return template.TemplateResponse( "page_login.html", {"request":req, "referer":referer} )
 
 
 ### general
@@ -70,17 +69,19 @@ async def post_login( data:LoginSchema, ss:AsyncSession=Depends( DB.get_ss ) ):
         text(query),
         params={ "name":data.name, "password":data.password }
     )
-    results = result.all()
+    user = result.mappings().first()
 
-    if results:
-        print(type(results[0]), results[0])
-        resp = JSONResponse( content={}, status_code=200 )
-        # 토큰 발행 구현할 것, 토큰 확인도 구현할것
-        new_token = 
+    if user:
+        resp = JSONResponse( status_code=200, content={} )
+        
+        new_token = AUTH.create_token( {
+            "name":user["name_"],
+            "type":user["type_"]
+        } )
 
         # httponly 쿠키 넣어주기
         resp.set_cookie(
-            key="login_token",
+            key="access_token",
             value=new_token,
             httponly=True,
             max_age=3600,
@@ -88,4 +89,31 @@ async def post_login( data:LoginSchema, ss:AsyncSession=Depends( DB.get_ss ) ):
         )
         return resp
     else:
-        return JSONResponse( content={}, status_code=404 )
+        return JSONResponse( status_code=404, content={} )
+
+
+#### logout
+@router.get("/logout")
+async def get_logout( req:Request ):
+    referer = req.query_params.get("referer")
+    resp = RedirectResponse(
+        url=referer
+    )
+    resp.delete_cookie(key="access_token")
+    return resp
+
+#### sign up
+@router.post("/sign")
+async def post_sign( ss:AsyncSession=Depends( DB.get_ss ) ):
+    name="kim"
+    password="123"
+    query = """
+    INSERT INTO account(name, password)
+    VALUES(:name, :password) AS vals
+    ON DUPLICATE KEY UPDATE name=vals.name, password=vals.password
+    """
+    await ss.execute(
+        statement=text( query ),
+        params={"name":name, "password":password}
+    )
+    await ss.commit()

@@ -30,7 +30,9 @@
     .a-login {
         color: white;
     }
-    .a-signup { color: white; }
+    .a-sign { color: white; }
+    .a-profile { color: white; }
+    .a-logout { color: white; }
 
 
 
@@ -42,17 +44,23 @@
 
 <div class="widget-account">
     <a class="a-varzeny" href="/">V</a>
-
     <div class="push-right"></div>
 
-    <a class="a-login" href="/common/page-login" target="_top">Login</a>
+    {% if token %}
+    <a class="a-profile" href="" target="_top">My Page</a>
+    <a class="a-logout" href="/common/logout?referer={{ referer }}" target="_top">LogOut</a>
+
+    {% else %}
+    <a class="a-login" href="/common/page-login?referer={{ referer }}" target="_top">Login</a>
     <a class="a-sign" href="/">Sign</a>
+    {% endif %}
 </div>
 
 
 
 
 <script>
+
     window.onload = function(){
 
     }
