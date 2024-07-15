@@ -22,8 +22,22 @@ template = Jinja2Templates(directory="app/template")
 
 
 ### test
-# @router.get("/test")
-
+@router.get("/test")
+async def test(req:Request, ss:AsyncSession=Depends(DB.get_ss)):
+    for i in range(1,11,1):
+        new_pw = AUTH.create_hash("admin")
+        result = await ss.execute(
+            statement=text(
+                "UPDATE account SET hashed_password_=:value WHERE id_=:id"
+            ),
+            params={
+                "value":new_pw,
+                "id":i
+            }
+        )
+        print("---",result)
+    await ss.commit()
+    return {"data":"success"}
 
 
 
@@ -52,8 +66,12 @@ async def get_accountbar(req:Request, token:str=Depends(AUTH.check_token)):
 @router.get("/page-login")
 async def get_page_login(req:Request):
     referer = req.query_params.get("referer")
-    print(referer)
     return template.TemplateResponse( "page_login.html", {"request":req, "referer":referer} )
+
+@router.get("/page-sign")
+async def get_page_sign(req:Request):
+    referer = req.query_params.get("referer")
+    return template.TemplateResponse( "page_sign.html", {"request":req, "referer":referer} )
 
 
 ### general
@@ -63,23 +81,30 @@ async def post_login( data:LoginSchema, ss:AsyncSession=Depends( DB.get_ss ) ):
     print(type(data), data)
     
     query = """
-    SELECT * FROM account WHERE name_=:name AND password_=:password;
+    SELECT * FROM account WHERE name_=:name;
     """
     result = await ss.execute(
         text(query),
-        params={ "name":data.name, "password":data.password }
+        params={ "name":data.name }
     )
     user = result.mappings().first()
 
     if user:
+        ##### pw hash
+        tof = AUTH.verify_hash( 
+            input_val=data.password, hashed_val=user["hashed_password_"] 
+        )
+        if not tof:
+            return JSONResponse( status_code=404, content={} )
+
+        ##### token
         resp = JSONResponse( status_code=200, content={} )
-        
         new_token = AUTH.create_token( {
             "name":user["name_"],
             "type":user["type_"]
         } )
 
-        # httponly 쿠키 넣어주기
+        ##### httponly 쿠키에 토큰 넣어주기
         resp.set_cookie(
             key="access_token",
             value=new_token,
@@ -89,6 +114,7 @@ async def post_login( data:LoginSchema, ss:AsyncSession=Depends( DB.get_ss ) ):
         )
         return resp
     else:
+        print("---1")
         return JSONResponse( status_code=404, content={} )
 
 

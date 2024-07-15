@@ -86,41 +86,37 @@
         <p>from {{referer}}</p>
     </div>
 
+    <script>
+        document.getElementById("btn-login").addEventListener(
+            "click",
+            ()=>{
+                const name = document.getElementById("input-name").value;
+                const password = document.getElementById("input-password").value;
+                if(name.length<3 || password.length<3){
+                    alert( "Please enter at least 3 characters!" );
+                    return
+                }
+                fetch(
+                    "/common/login",
+                    {
+                        method:"POST",
+                        headers:{ "Content-Type": "application/json"  },
+                        body:JSON.stringify( {
+                            name:name,
+                            password:password
+                        } )
+                    }
+                )
+                .then(resp=>{
+                    if(resp.ok){ window.location.href="{{ referer }}"; }
+                    else{ alert("login failed !"); }
+                })
+                .catch(error=>{ alert("network error : ", error) })
+            }
+        )
+    
+    </script>
 
 </body>
-
-<script>
-    document.getElementById("btn-login").addEventListener(
-        "click",
-        ()=>{
-            const name = document.getElementById("input-name").value;
-            const password = document.getElementById("input-password").value;
-            if(name.length<3 || password.length<3){
-                alert( "Please enter at least 3 characters!" );
-                return
-            }
-            fetch(
-                "/common/login",
-                {
-                    method:"POST",
-                    headers:{ "Content-Type": "application/json"  },
-                    body:JSON.stringify( {
-                        name:name,
-                        password:password
-                    } )
-                }
-            )
-            .then(resp=>{
-                if(resp.ok){
-                    console.log("login success !")
-                    window.location.href="{{ referer }}";
-                }
-                else{ alert("login fail !"); }
-            })
-            .catch(error=>{ alert("network error : ", error) })
-        }
-    )
-
-</script>
 
 </html>

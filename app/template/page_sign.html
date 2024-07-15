@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>Page Sign</title>
+    <style>
+        /* reset */
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: black;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* setup */
+        .a-varzeny {
+            color: blueviolet;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .div-form {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid white;
+            border-radius: 1rem;
+            padding: 1rem;
+            width: 50vw;
+        }
+        .div-form label { font-size: 2rem; }
+
+        .div-1 { display: flex; }
+        .div-1 input { flex-grow: 1; height: 2rem; }
+        .div-1 button {
+            width: 8rem; margin-left: 1rem; border: none; background-color: blueviolet; color: white; font-size: 2rem;
+        }
+        
+        .div-email { margin-bottom: 1rem; }
+        .div-code { margin-bottom: 1rem; display: none; }
+        #btn-next {
+            display: none;
+            border: none;
+            background-color: blueviolet;
+            color: white;
+            font-size: 2rem;
+        }
+
+
+
+
+
+    </style>
+</head>
+<body>
+    <a class="a-varzeny" href="/" target="_top">Varzeny</a>
+    <div class="div-form">
+        <div class="div-email">
+            <label>E-MAIL</label>
+            <div class="div-1">
+                <input id="input-email" type="text">
+                <button id="btn-send">SEND</button>
+            </div>
+        </div>
+
+        <div class="div-code">
+            <label>CODE</label>
+            <div class="div-1">
+                <input id="input-code" type="text">
+            </div>
+        </div>
+
+        <button id="btn-next">NEXT</button>
+    </div>
+
+
+    <script>
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const email = document.getElementById("input-email")
+        
+        document.getElementById("btn-send").addEventListener("click", ()=>{
+            if( !emailRegex.test(email.value) ){ 
+                alert("wrong e-mail !");
+                return 
+            }
+
+            fetch("/check-email",{
+                method:"POST",
+                headers:{ "Content-Type": "application/json"  },
+                body:JSON.stringify(
+                    {"email":email.value}
+                )
+            })
+            .then(resp=>{
+                if(resp.ok){
+
+                }else{
+
+                }
+            })
+            .catch(e=>{ console.log("error : ", e); })
+        });
+    </script>
+</body>
+</html>
