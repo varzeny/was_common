@@ -23,7 +23,7 @@ template = Jinja2Templates(directory="app/template")
 
 ### test
 @router.get("/test")
-async def test(req:Request, ss:AsyncSession=Depends(DB.get_ss)):
+async def test(req:Request, ss:AsyncSession=Depends( DB.get_db_1 )):
     for i in range(1,11,1):
         new_pw = AUTH.create_hash("admin")
         result = await ss.execute(
@@ -77,7 +77,7 @@ async def get_page_sign(req:Request):
 ### general
 #### login
 @router.post("/login")
-async def post_login( data:LoginSchema, ss:AsyncSession=Depends( DB.get_ss ) ):
+async def post_login( data:LoginSchema, ss:AsyncSession=Depends( DB.get_db_1 ) ):
     print(type(data), data)
     
     query = """
@@ -114,7 +114,6 @@ async def post_login( data:LoginSchema, ss:AsyncSession=Depends( DB.get_ss ) ):
         )
         return resp
     else:
-        print("---1")
         return JSONResponse( status_code=404, content={} )
 
 
@@ -130,7 +129,7 @@ async def get_logout( req:Request ):
 
 #### sign up
 @router.post("/sign")
-async def post_sign( ss:AsyncSession=Depends( DB.get_ss ) ):
+async def post_sign( ss:AsyncSession=Depends( DB.get_db_1 ) ):
     name="kim"
     password="123"
     query = """

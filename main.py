@@ -18,16 +18,17 @@ async def startup():
     print("startup...")
 
     #### read config
-    app.state.config = read_file_for_json( os.path.join( os.path.dirname(__file__), "config.json" ) )
+    application.state.config = read_file_for_json( os.path.join( os.path.dirname(__file__), "config.json" ) )
 
     #### Authorization Manager setup
-    AuthorizationManager.activate( app.state.config["authorization_manager"] )
+    AuthorizationManager.activate( application.state.config["authorization_manager"] )
 
     #### DataBase Manager setup
-    DatabaseManager.activate( app.state.config["database_manager"] )
+    DatabaseManager.add_database( application.state.config["database_manager"]["db_1"] )
+    DatabaseManager.databases["db_1"].activate()
     
     #### endpoint router
-    app.include_router( r1 )
+    application.include_router( r1 )
 
     print("startup done!")
 
@@ -38,7 +39,7 @@ async def shutdown():
     print("shutdown done!")
 
 
-app = FastAPI(
+application = FastAPI(
     on_startup=[
         startup
     ],
