@@ -25,14 +25,16 @@ class AuthorizationManager:
     def check_token(cls, req:Request):
         token = req.cookies.get( "access_token" )
         if not token:
-            print("no token")
+            print("============================ no token ============================")
             return None
         
         decoded_token = cls.verify_token(token)
         if not decoded_token:
-            print("token problem")
+            print(" ============================ token problem ============================")
             return None
         
+        print( f"============================ {decoded_token['type']} : {decoded_token['name']} 의 요청 ============================" )
+
         return decoded_token
     
 

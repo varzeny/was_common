@@ -36,6 +36,9 @@ async def startup():
 async def shutdown():
     print("shutdown...")
 
+    #### DB
+    await DatabaseManager.remove_database("all")
+
     print("shutdown done!")
 
 

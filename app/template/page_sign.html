@@ -93,7 +93,7 @@
                 return 
             }
 
-            fetch("/check-email",{
+            fetch("/common/check-email",{
                 method:"POST",
                 headers:{ "Content-Type": "application/json"  },
                 body:JSON.stringify(
@@ -102,9 +102,9 @@
             })
             .then(resp=>{
                 if(resp.ok){
-
+                    console.log("ok")
                 }else{
-
+                    alert("no ok")
                 }
             })
             .catch(e=>{ console.log("error : ", e); })

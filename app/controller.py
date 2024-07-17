@@ -11,7 +11,7 @@ from fastapi.templating import Jinja2Templates
 from app.core.database_manager import DatabaseManager as DB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from app.schema.endpoint_schema import LoginSchema, SignSchema
+from app.schema.endpoint_schema import LoginSchema, EmailSchema
 from app.core.authorization_manager import AuthorizationManager as AUTH
 
 ## definition
@@ -23,21 +23,8 @@ template = Jinja2Templates(directory="app/template")
 
 ### test
 @router.get("/test")
-async def test(req:Request, ss:AsyncSession=Depends( DB.get_db_1 )):
-    for i in range(1,11,1):
-        new_pw = AUTH.create_hash("admin")
-        result = await ss.execute(
-            statement=text(
-                "UPDATE account SET hashed_password_=:value WHERE id_=:id"
-            ),
-            params={
-                "value":new_pw,
-                "id":i
-            }
-        )
-        print("---",result)
-    await ss.commit()
-    return {"data":"success"}
+async def test( req:Request ):
+    print()
 
 
 
@@ -45,12 +32,6 @@ async def test(req:Request, ss:AsyncSession=Depends( DB.get_db_1 )):
 @router.get("/widget-account")
 async def get_accountbar(req:Request, token:str=Depends(AUTH.check_token)):
     referer = req.headers.get("referer")
-
-    if token:
-        print("yes")
-        print(token)
-    else:
-        print("no")
     return template.TemplateResponse(
         name="widget_account.html",
         status_code=200,
@@ -77,17 +58,17 @@ async def get_page_sign(req:Request):
 ### general
 #### login
 @router.post("/login")
-async def post_login( data:LoginSchema, ss:AsyncSession=Depends( DB.get_db_1 ) ):
+async def post_login( data:LoginSchema ):
     print(type(data), data)
-    
-    query = """
-    SELECT * FROM account WHERE name_=:name;
-    """
-    result = await ss.execute(
-        text(query),
-        params={ "name":data.name }
-    )
-    user = result.mappings().first()
+
+    async with DB.databases["db_1"].get_ss() as ss:
+        result = await ss.execute(
+            text("""
+            SELECT * FROM account WHERE name_=:name;
+            """),
+            params={ "name":data.name }
+        )
+        user = result.mappings().first()
 
     if user:
         ##### pw hash
@@ -127,18 +108,11 @@ async def get_logout( req:Request ):
     resp.delete_cookie(key="access_token")
     return resp
 
+
 #### sign up
-@router.post("/sign")
-async def post_sign( ss:AsyncSession=Depends( DB.get_db_1 ) ):
-    name="kim"
-    password="123"
-    query = """
-    INSERT INTO account(name, password)
-    VALUES(:name, :password) AS vals
-    ON DUPLICATE KEY UPDATE name=vals.name, password=vals.password
-    """
-    await ss.execute(
-        statement=text( query ),
-        params={"name":name, "password":password}
-    )
-    await ss.commit()
+@router.post("/check-email")
+async def post_check_email( data:EmailSchema ):
+    print(data.email)
+    # e-mail send
+    
+

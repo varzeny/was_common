@@ -13,6 +13,11 @@ class LoginSchema(BaseModel):
     password:str = Field( default=..., min_length=3, max_length=45 )
 
 
+
+class EmailSchema(BaseModel):
+    email:str = Field( default=..., min_length=3, max_length=45 )
+
+
 class SignSchema(BaseModel):
     name:str = Field( default=..., min_length=3, max_length=45 )
     password:str = Field( default=..., min_length=3, max_length=45 )
