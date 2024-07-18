@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset='utf-8'>
-    <title>Page Sign</title>
+    <title>Page Sign 1</title>
     <style>
         /* reset */
         body {
@@ -29,7 +29,7 @@
             margin-bottom: 1rem;
         }
 
-        .div-form {
+        .div-center {
             display: flex;
             flex-direction: column;
             border: 1px solid white;
@@ -37,7 +37,7 @@
             padding: 1rem;
             width: 50vw;
         }
-        .div-form label { font-size: 2rem; }
+        .div-center label { font-size: 2rem; }
 
         .div-1 { display: flex; }
         .div-1 input { flex-grow: 1; height: 2rem; }
@@ -46,24 +46,13 @@
         }
         
         .div-email { margin-bottom: 1rem; }
-        .div-code { margin-bottom: 1rem; display: none; }
-        #btn-next {
-            display: none;
-            border: none;
-            background-color: blueviolet;
-            color: white;
-            font-size: 2rem;
-        }
-
-
-
-
 
     </style>
 </head>
 <body>
     <a class="a-varzeny" href="/" target="_top">Varzeny</a>
-    <div class="div-form">
+    <div class="div-center">
+        {% if step==0 %}
         <div class="div-email">
             <label>E-MAIL</label>
             <div class="div-1">
@@ -71,15 +60,6 @@
                 <button id="btn-send">SEND</button>
             </div>
         </div>
-
-        <div class="div-code">
-            <label>CODE</label>
-            <div class="div-1">
-                <input id="input-code" type="text">
-            </div>
-        </div>
-
-        <button id="btn-next">NEXT</button>
     </div>
 
 
@@ -93,7 +73,7 @@
                 return 
             }
 
-            fetch("/common/check-email",{
+            fetch("/common/sign-1",{
                 method:"POST",
                 headers:{ "Content-Type": "application/json"  },
                 body:JSON.stringify(
@@ -102,9 +82,9 @@
             })
             .then(resp=>{
                 if(resp.ok){
-                    console.log("ok")
+                    console.log("ok");
                 }else{
-                    alert("no ok")
+                    resp.json().then(msg=>{ alert(msg.detail); })
                 }
             })
             .catch(e=>{ console.log("error : ", e); })

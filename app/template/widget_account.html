@@ -49,7 +49,7 @@
         <a class="a-varzeny" href="/" target="_top">V</a>
         <div class="push-right"></div>
     
-        {% if token %}
+        {% if token["type"] != "guest" %}
         <a class="a-profile" href="" target="_top">My Page</a>
         <a class="a-logout" href="/common/logout?referer={{ referer }}" target="_top">LogOut</a>
     

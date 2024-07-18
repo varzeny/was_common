@@ -2,16 +2,17 @@
 
 ## lib
 import jwt, bcrypt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.requests import Request
 from fastapi.responses import Response
+from typing import Dict, Union
 
 ## definition
 class AuthorizationManager:
     secret_key = None
     algorithm = None
     expired = None
-    token_type = [ "admin","user","test" ]
+    token_type = [ "admin","user","guest" ]
 
     @classmethod
     def activate(cls, config:dict):
@@ -22,26 +23,9 @@ class AuthorizationManager:
 
     # jwt token #############################################################
     @classmethod
-    def check_token(cls, req:Request):
-        token = req.cookies.get( "access_token" )
-        if not token:
-            print("============================ no token ============================")
-            return None
-        
-        decoded_token = cls.verify_token(token)
-        if not decoded_token:
-            print(" ============================ token problem ============================")
-            return None
-        
-        print( f"============================ {decoded_token['type']} : {decoded_token['name']} 의 요청 ============================" )
-
-        return decoded_token
-    
-
-    @classmethod
     def create_token(cls, data:dict):
-        exp = datetime.now() + timedelta(minutes=cls.expired)
-        data["exp"]=exp
+        exp = datetime.now(timezone.utc) + timedelta(minutes=cls.expired)
+        data["exp"]=exp.timestamp()
         encoded_jwt = jwt.encode(
             payload=data,
             key=cls.secret_key,
@@ -51,7 +35,7 @@ class AuthorizationManager:
 
 
     @classmethod
-    def verify_token(cls, token:str):
+    def verify_token(cls, token:str) -> Union[Dict, None]:
         try:
             decoded_jwt = jwt.decode(
                 jwt=token,
