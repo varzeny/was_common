@@ -11,36 +11,37 @@ from app.core.authorization_manager import AuthorizationManager as AUTH
 # definition
 class AccessTokenMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, req:Request, call_next):
-        now = datetime.now(timezone.utc)
-        remain_now = None
+        now_t = datetime.now(timezone.utc)
+        remain_t = None
 
         access_token = req.cookies.get("access_token")
         if access_token:
-            decoded_token = AUTH.verify_token( token=access_token )
-            if decoded_token:
+            decoded_access_token = AUTH.verify_token( token=access_token )
+            if decoded_access_token:
                 ###############################
-                vt = decoded_token['exp']
+                vt = decoded_access_token['exp']
                 exp_t = datetime.fromtimestamp( vt, timezone.utc )
-                remain_now = exp_t - datetime.now(timezone.utc)
+                remain_t = exp_t - datetime.now(timezone.utc)
                 ###############################
 
-                decoded_token["exp"] = datetime.now(timezone.utc)+timedelta(AUTH.expired)
-                req.state.token = decoded_token
+                decoded_access_token["exp"] = datetime.now(timezone.utc)+timedelta(AUTH.expired_min)
+                req.state.access_token = decoded_access_token
        
             else: # 토큰은 있는데 유효하지 않음
-                req.state.token = {"type":"guest", "name":"unknown"}             
+                req.state.access_token = {"type":"guest", "name":"unknown"}             
             
         else: # 토큰이 없으면
-            req.state.token = {"type":"guest", "name":"unknown"}
+            req.state.access_token = {"type":"guest", "name":"unknown"}
 
-        print(f"========================================== {req.state.token['type']} Type Client {req.state.token['name']} ==========================================")
+        print(f"========================================== {req.state.access_token['type']} {req.state.access_token['name']} ==========================================")
+        print(f"current time : {now_t} token remaining time : {remain_t}")
 
         # 응답 후
         resp:Response = await call_next(req)
-        encoded_token = AUTH.create_token( req.state.token )
+        encoded_access_token = AUTH.create_token( req.state.access_token, AUTH.expired_min )
         resp.set_cookie(
             key="access_token",
-            value=encoded_token,
+            value=encoded_access_token,
             httponly=True,
             max_age=3600,
             path="/"

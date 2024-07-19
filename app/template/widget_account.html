@@ -49,13 +49,13 @@
         <a class="a-varzeny" href="/" target="_top">V</a>
         <div class="push-right"></div>
     
-        {% if token["type"] != "guest" %}
+        {% if access_token["type"] != "guest" %}
         <a class="a-profile" href="" target="_top">My Page</a>
         <a class="a-logout" href="/common/logout?referer={{ referer }}" target="_top">LogOut</a>
     
         {% else %}
         <a class="a-login" href="/common/page-login?referer={{ referer }}" target="_top">Login</a>
-        <a class="a-sign" href="/common/page-sign?referer={{ referer }}" target="_top">Sign</a>
+        <a class="a-sign" href="/common/page-sign" target="_top">Sign</a>
         {% endif %}
     </div>
     

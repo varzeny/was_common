@@ -18,13 +18,13 @@ class AuthorizationManager:
     def activate(cls, config:dict):
         cls.secret_key = config["secret_key"]
         cls.algorithm = config["algorithm"]
-        cls.expired = config["expired"]
+        cls.expired_min = config["expired"]
 
 
     # jwt token #############################################################
     @classmethod
-    def create_token(cls, data:dict):
-        exp = datetime.now(timezone.utc) + timedelta(minutes=cls.expired)
+    def create_token(cls, data:dict, expired_min:float):
+        exp = datetime.now(timezone.utc) + timedelta(minutes=expired_min)
         data["exp"]=exp.timestamp()
         encoded_jwt = jwt.encode(
             payload=data,
