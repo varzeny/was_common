@@ -3,7 +3,7 @@
 ## lib
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from contextlib import asynccontextmanager
-from typing import Dict
+from typing import Dict, AsyncGenerator
 ## module
 
 ## definition
@@ -34,12 +34,12 @@ class Database:
         self.state = "deactive"
 
     @asynccontextmanager
-    async def get_ss(self):
+    async def get_ss(self)->AsyncGenerator[AsyncSession,None]:
         try:
             ss = self.session()
             yield ss
         except Exception as e:
-            print(f"error from get_ss of {self.name}")
+            print(f"error from get_ss of {self.name} : ", e)
         finally:
             await ss.close()
 

@@ -59,30 +59,13 @@ async def get_page_sign(req:Request):
     if access_token["type"] != "guest":
         return {"detail":"you already have an account"}
 
-
-    dict_context = {"step":0}
-    encoded_sign_token = AUTH.create_token( {"step":0}, 5.0 )
-    sign_token = req.cookies.get("sign_token")
-
-    if sign_token:
-        decoded_sign_token = AUTH.verify_token( sign_token )
-        if decoded_sign_token:
-            dict_context = {"step":decoded_sign_token["step"]}
-            encoded_sign_token = AUTH.create_token({"step":decoded_sign_token["step"]},5.0)
-
     resp = template.TemplateResponse(
         request=req,
         name="page_sign.html",
         status_code=200,
-        context=dict_context
+        context={}
     )
-    resp.set_cookie(
-        key="sign_token",
-        value=encoded_sign_token,
-        httponly=True,
-        max_age=300,
-        path="/"
-    )
+
     return resp
 
 
@@ -136,37 +119,136 @@ async def get_logout( req:Request ):
 
 @router.post("/sign")
 async def post_sign( req:Request ):
+    # 로그인을 했으면 배제
     if req.state.access_token["type"] != "guest":
         return {"detail":"you already have an account"}
     
+    # 몇단계 요청인지 확인
     data = await req.json()
     step = req.query_params.get("step")
 
+    # 단계에 맞는 쿠리를 가지고 있는지 확인
+    decoded_sign_token = AUTH.check_token(req, "sign_token")
+    print( decoded_sign_token )
+
     if step == "0": # 이메일
-        print(0)
-        verification_code = random.randint( 10000, 99999 )
-        html = template.TemplateResponse(
-            name="email_form.html",
-            context={
-                "request":req,
-                "verification_code":verification_code
-            }
-        )
-        email_content = html.body.decode("utf-8")
-        client = EM.clients["client_1"]
-        await client.send_email(
-            to=data["email"],
-            subject="verification code is arrived",
-            subtype="html",
-            body=email_content
-        )
+        print("step : ", 0)
+        try :
+            verification_code = random.randint( 10000, 99999 )
+            html = template.TemplateResponse(
+                name="email_form.html",
+                context={
+                    "request":req,
+                    "verification_code":verification_code
+                }
+            )
+            email_content = html.body.decode("utf-8")
+            client = EM.clients["client_1"]
+            await client.send_email(
+                to=data["email"],
+                subject="verification code is arrived",
+                subtype="html",
+                body=email_content
+            )
+            resp = JSONResponse( content={"detail":"sent email"}, status_code=200 )
+            resp.set_cookie(
+                key="sign_token",
+                value=AUTH.create_token(
+                    {
+                        "step":1, 
+                        "email":data["email"], 
+                        "verification_code":verification_code
+                    },
+                    5.0
+                ),
+                httponly=True,
+                max_age=300,
+                path="/"
+            )
+            return resp
+        except Exception as e:
+            print("error from post_sign step 0 : ",e)
+            return JSONResponse( content={"detail":"error"}, status_code=400 )
+
         
     elif step == "1": # 코드
-        print()
-    elif step == "3": # 이름
-        print()
-    elif step == "4": # 비번
-        print()
+        print("step : ",1)
+        try:
+            if decoded_sign_token["step"] != 1:
+                return JSONResponse( content={"detail":"wrong sequence"}, status_code=400 )
+            
+            # 클라이언트가 보낸 코드가 맞는지 확인
+            if int(data["code"]) != decoded_sign_token["verification_code"]:
+                return JSONResponse( content={"detail":"wrong code"}, status_code=400 )
+            
+            # 쿠키를 다음 단계로
+            resp = JSONResponse( content={}, status_code=200 )
+            decoded_sign_token["step"] = 2
+            resp.set_cookie(
+                key="sign_token",
+                value=AUTH.create_token( decoded_sign_token, 5.0 ),
+                httponly=True,
+                max_age=300,
+                path="/"
+            )
+            return resp
+        except Exception as e:
+            print("error from post_sign step 1 : ",e)
+            return JSONResponse( content={"detail":"error"}, status_code=400 )
+
+
+    elif step == "2": # 이름
+        try:
+            async with DB.databases["db_1"].get_ss() as ss:
+                result = await ss.execute(
+                    statement=text(
+                        "SELECT * FROM account WHERE name_=:name;"
+                    ),
+                    params={"name":data["name"]}
+                )
+                user = await result.fetchone()
+                if user: # 이미 있는 이름이면
+                    return JSONResponse(content={"detail":"that name is already exsit"}, status_code=400)
+            
+            decoded_sign_token["step"]=3
+            decoded_sign_token["name"]=data["name"]
+            resp = JSONResponse(content={},status_code=200)
+            resp.set_cookie(
+                key="sign_token",
+                value=AUTH.create_token( decoded_sign_token, 5.0 ),
+                httponly=True,
+                max_age=300,
+                path="/"
+            )
+            return resp
+        except Exception as e:
+            print("error from post_sign step 2 : ", e)
+            return JSONResponse( content={"detail":"error"}, status_code=400 )
+
+
+    elif step == "3": # 등록
+        try:
+            async with DB.databases["db_1"].get_ss() as ss:
+                result = await ss.execute(
+                    statement=text(
+                        "INSERT INTO account(type_, name_, hashed_password_, email_) VALUES(:type, :name, :hashed_password, :email);"
+                    ),
+                    params={
+                        "type":"user",
+                        "name":decoded_sign_token["name"],
+                        "hashed_password":AUTH.create_hash(data["password"]),
+                        "email":decoded_sign_token["email"]
+                    }
+                )
+                print(result)
+                await ss.commit()
+            resp = JSONResponse( content={}, status_code=200 )
+            resp.delete_cookie( "sign_token" )
+            return resp
+
+        except Exception as e:
+            print("error from post_sign : ", e)
+            return JSONResponse( content={"detail":"error"}, status_code=400 )
 
 
 # #### sign up

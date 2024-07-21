@@ -67,6 +67,10 @@
             display: none;
         }
 
+        #lbl-1 {
+            font-size: 2rem;
+        }
+
         
 
     </style>
@@ -75,7 +79,11 @@
     <a class="a-varzeny" href="/" target="_top">Varzeny</a>
     <div class="div-center">
 
-        <div class="div-article" id="div-email">
+        <div class="div-article" id="div-step-N">
+            <label id="lbl-1">Processing...</label>
+        </div>
+
+        <div class="div-article" id="div-step-0">
             <label>E-MAIL</label>
             <div class="div-input">
                 <input id="input-email" type="text">
@@ -83,7 +91,7 @@
             </div>
         </div>
 
-        <div class="div-article" id="div-code">
+        <div class="div-article" id="div-step-1">
             <label>CODE</label>
             <div class="div-input">
                 <input id="input-code" type="text">
@@ -91,7 +99,7 @@
             </div>
         </div>
 
-        <div class="div-article" id="div-name">
+        <div class="div-article" id="div-step-2">
             <label>NAME</label>
             <div class="div-input">
                 <input id="input-name" type="text">
@@ -99,31 +107,97 @@
             </div>
         </div>
 
-        <div class="div-article" id="div-password">
+        <div class="div-article" id="div-step-3">
             <label>PASSWORD</label>
             <div class="div-input">
                 <input id="input-password" type="text">
             </div>
         </div>
-        
         <button id="btn-sign">SIGN</button>
+        
     </div>
 
 
     <script>
+        let email = null;
+        let name = null;
 
-        document.getElementById("div-email").style.display="block";
+        const stepN = document.getElementById("div-step-N");
+        const step0 = document.getElementById("div-step-0");
+        const step1 = document.getElementById("div-step-1");
+        const step2 = document.getElementById("div-step-2");
+        const step3 = document.getElementById("div-step-3");
+
+        step0.style.display="block";
 
 
 
         
         document.getElementById("btn-email").addEventListener("click", async()=>{
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            const email = document.getElementById("input-email")
-            if( !emailRegex.test(email.value) ){ alert("wrong e-mail !"); }
-            else{ await post_sign( 0, {"email":email.value} ); }
+            const inputEmail = document.getElementById("input-email").value;
+            if( !emailRegex.test(inputEmail) ){ alert("wrong e-mail !"); }
+            else{
+                step0.style.display="none";
+                stepN.style.display="block";
+                result = await post_sign( 0, {"email":inputEmail} ); 
+                if(result){
+                    email=inputEmail;
+                    stepN.style.display="none";
+                    step1.style.display="block";
+                }else{ 
+                    email=null;
+                    stepN.style.display="none";
+                    step0.style.display="block";
+                }
+            }
         });
 
+        document.getElementById("btn-code").addEventListener("click", async()=>{
+            const inputCode = document.getElementById("input-code").value;
+            step1.style.display="none";
+            stepN.style.display="block";
+            result = await post_sign( 1, {"code":inputCode} );
+            if(result){
+                stepN.style.display="none";
+                step2.style.display="block";
+            }else{
+                stepN.style.display="none";
+                step1.style.display="block";
+            }
+        });
+
+        document.getElementById("btn-name").addEventListener("click", async()=>{
+            const inputName = document.getElementById("input-name").value;
+            step2.style.display="none";
+            stepN.style.display="block";
+            result = await post_sign( 2, {"name":inputName} );
+            if(result){
+                name = inputName;
+                stepN.style.display="none";
+                step3.style.display="block";
+                document.getElementById("btn-sign").style.display="block";
+            }else{
+                stepN.style.display="none";
+                step2.style.display="block";
+            }
+        });
+
+        document.getElementById("btn-sign").addEventListener("click", async()=>{
+            const inputPassword = document.getElementById("input-password").value;
+            step3.style.display="none";
+            stepN.style.display="block";
+            document.getElementById("btn-sign").style.display="none";
+            result = await post_sign( 3, {"password":inputPassword} );
+            if(result){
+                document.getElementById("lbl-1").innerHTML="created success !";
+                setTimeout( ()=>{ window.location.href="/"; }, 3000 )
+            }else{
+                stepN.style.display="none";
+                step3.style.display="block";
+                document.getElementById("btn-sign").style.display="block";
+            }
+        });
         
 
 
@@ -132,16 +206,23 @@
             const queryString = new URLSearchParams( {"step":step} ).toString();
             const url = `/common/sign?${queryString}`;
             try{
-                await fetch(
-                url,
-                {
-                    method:"POST",
-                    headers:{ "Content-Type": "application/json"  },
-                    body:JSON.stringify( bodyDict )
+                const resp = await fetch(
+                    url,
+                    {
+                        method:"POST",
+                        headers:{ "Content-Type": "application/json"  },
+                        body:JSON.stringify( bodyDict )
+                    }
+                );
+                if(resp.ok){ return true }
+                else{ 
+                    msg = await resp.json()
+                    alert(msg["detail"])
+                    return false 
                 }
-            )
             }catch(e){
                 console.log("error : ", e);
+                return false
             }
 
         }

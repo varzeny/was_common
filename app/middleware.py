@@ -14,22 +14,17 @@ class AccessTokenMiddleware(BaseHTTPMiddleware):
         now_t = datetime.now(timezone.utc)
         remain_t = None
 
-        access_token = req.cookies.get("access_token")
-        if access_token:
-            decoded_access_token = AUTH.verify_token( token=access_token )
-            if decoded_access_token:
-                ###############################
-                vt = decoded_access_token['exp']
-                exp_t = datetime.fromtimestamp( vt, timezone.utc )
-                remain_t = exp_t - datetime.now(timezone.utc)
-                ###############################
+        decoded_access_token = AUTH.check_token( req, "access_token" )
+        if decoded_access_token:
+            ###############################
+            vt = decoded_access_token['exp']
+            exp_t = datetime.fromtimestamp( vt, timezone.utc )
+            remain_t = exp_t - datetime.now(timezone.utc)
+            ###############################
 
-                decoded_access_token["exp"] = datetime.now(timezone.utc)+timedelta(AUTH.expired_min)
-                req.state.access_token = decoded_access_token
-       
-            else: # 토큰은 있는데 유효하지 않음
-                req.state.access_token = {"type":"guest", "name":"unknown"}             
-            
+            decoded_access_token["exp"] = datetime.now(timezone.utc)+timedelta(AUTH.expired_min)
+            req.state.access_token = decoded_access_token
+    
         else: # 토큰이 없으면
             req.state.access_token = {"type":"guest", "name":"unknown"}
 
