@@ -6,7 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from datetime import datetime, timezone, timedelta
 
 # module
-from app.core.authorization_manager import AuthorizationManager as AUTH
+from application.core.authorization_manager import AuthorizationManager as AUTH
 
 # definition
 class AccessTokenMiddleware(BaseHTTPMiddleware):

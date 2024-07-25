@@ -1,0 +1,28 @@
+
+
+html { font-size: 1rem; }
+body {
+
+}
+
+
+.widget-account {
+    display: flex;
+    font-size: 2rem;
+}
+    .widget-account a {
+        margin-top: 1rem;
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+    .a-varzeny { color: blueviolet; }
+
+    .push-right { margin-left: auto; }
+
+    .a-login { color: white; }
+    .a-sign { color: white; }
+    .a-profile { color: white; }
+    .a-logout { color: white; }
+
+
+

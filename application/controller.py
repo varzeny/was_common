@@ -11,14 +11,14 @@ from sqlalchemy import text
 import random
 
 ## module
-from app.core.database_manager import DatabaseManager as DB
-from app.schema.endpoint_schema import LoginSchema, EmailSchema
-from app.core.authorization_manager import AuthorizationManager as AUTH
-from app.core.email_manager import EmailManager as EM
+from application.core.database_manager import DatabaseManager as DB
+from application.schema.endpoint_schema import LoginSchema, EmailSchema
+from application.core.authorization_manager import AuthorizationManager as AUTH
+from application.core.email_manager import EmailManager as EM
 
 ## definition
 router = APIRouter()
-template = Jinja2Templates(directory="app/template")
+template = Jinja2Templates(directory="application/template")
 
 ## endpoint
 
@@ -58,20 +58,22 @@ async def get_page_sign(req:Request):
     # 로그인 했으면 회원가입 하려는 요청 거르기
     if access_token["type"] != "guest":
         return {"detail":"you already have an account"}
-
     resp = template.TemplateResponse(
         request=req,
         name="page_sign.html",
         status_code=200,
         context={}
     )
-
     return resp
 
+@router.get("/page-mypage")
+async def get_mypage(req:Request):
+    print()
 
     
 
 ### general
+
 #### login
 @router.post("/login")
 async def post_login( req:Request, data:LoginSchema ):
@@ -97,6 +99,7 @@ async def post_login( req:Request, data:LoginSchema ):
         ##### token
         resp = JSONResponse( status_code=200, content={} )
         req.state.access_token = {
+            "id":user["id_"],
             "name":user["name_"],
             "type":user["type_"]
         }
@@ -249,76 +252,4 @@ async def post_sign( req:Request ):
         except Exception as e:
             print("error from post_sign : ", e)
             return JSONResponse( content={"detail":"error"}, status_code=400 )
-
-
-# #### sign up
-# @router.post("/sign-1")
-# async def post_sign_1( req:Request, data:EmailSchema ):
-#     print(data.email)
-
-#     try:
-#         # duplicate check
-#         async with DB.databases["db_1"].get_ss() as ss:
-#             result = await ss.execute(
-#                 statement=text("""
-#                     SELECT name_ FROM account WHERE email_=:email;
-#                 """),
-#                 params={
-#                     "email":data.email
-#                 }
-#             )
-#             user = result.fetchone()
-#             print(user)
-#             if user:
-#                 return JSONResponse(
-#                     content={"detail":"this email already exist"},
-#                     status_code=400
-#                 )
-
-
-#         # e-mail send
-#         verification_code = random.randint( 10000, 99999 )
-#         html = template.TemplateResponse(
-#             name="email_form.html",
-#             context={
-#                 "request":req,
-#                 "verification_code":verification_code
-#             }
-#         )
-#         email_content = html.body.decode("utf-8")
-
-#         client = EM.clients["client_1"]
-#         await client.send_email(
-#             to=data.email,
-#             subject="verification code is arrived",
-#             subtype="html",
-#             body=email_content
-#         )
-
-#         # token
-#         sign_token = AUTH.create_token( {
-#             "step":2,
-#             "verification_code":verification_code
-#         } )
-#         resp = template.TemplateResponse(
-#             request=req,
-#             name="page_sign_2.html",
-#             context={}
-#         )
-#         resp.set_cookie(
-#             key="sign_token",
-#             value=sign_token,
-#             httponly=True,
-#             max_age=600,
-#             path="/"
-#         )
-#         return resp
-
-
-#     except Exception as e:
-#         print( "error from post_check_email : ", e )
-#         return JSONResponse( content={}, status_code=404 )
-    
-
-
 
